@@ -12,7 +12,7 @@ const getSettlement = (req, res) => {
     if (err) {
       res.status(500).send(err);
     } else if (rows.length == 0) {
-      res.status(404).send({ error: 'Transactions not found for given group id.' });
+      res.status(404).send({ error: 'Transactions not found for given group id.', id });
     } else {
       var settlements = {};
       rows.forEach(element => {
@@ -41,7 +41,11 @@ const getSettlement = (req, res) => {
       }
       var response = { beforeSettlements: beforeSettlements };
       var afterSettlements = settleTransactions(beforeSettlements);
-      response.afterSettlements = afterSettlements;
+      if (afterSettlements.length > 0) {
+        response.afterSettlements = afterSettlements;
+      } else {
+        response.afterSettlements = "Every transaction is settled.";
+      }
       res.status(200).send(response);
     }
   });
@@ -84,7 +88,7 @@ const settleTransactions = (transactions) => {
       temp.set(oneUser, 1);
       for(let anotherUser of map.keys()){
           if(!temp.has(anotherUser) && oneUser != anotherUser){
-              if(map.get(anotherUser) == -map.get(oneUser)){
+              if(map.get(anotherUser) == -map.get(oneUser) && map.get(oneUser) != 0){
                   if(map.get(anotherUser) > map.get(oneUser)){
                       afterSettlements.push({
                         "userWhoIsGoingToReceive": anotherUser,
@@ -113,11 +117,13 @@ const settleTransactions = (transactions) => {
     map.set(minObject, map.get(minObject) + minValue);
     map.set(maxObject, map.get(maxObject) - minValue);
 
-    afterSettlements.push({
-      "userWhoIsGoingToReceive": maxObject,
-      "userWhoIsGoingToPay": minObject,
-      "amount": minValue
-    });
+    if (minValue != 0) {
+      afterSettlements.push({
+        "userWhoIsGoingToReceive": maxObject,
+        "userWhoIsGoingToPay": minObject,
+        "amount": minValue
+      });
+    }
     settle();
   }
 

@@ -5,7 +5,11 @@ const getGroups = (req, res) => {
   const sql = 'SELECT * FROM groupings';
   mysqlConnection.query(sql, (err, rows) => {
     if (!err) {
-      res.send(rows);
+      if (rows.length > 0) {
+        res.status(200).send(rows);
+      } else {
+        res.status(404).send({ error: 'No groups created.' });
+      }
     } else {
       console.log(err);
       res.status(500).send({ error: 'Internal server error.' });
@@ -50,7 +54,7 @@ const createGroup = async (req, res) => {
                 }
               });
             }
-            res.send({ message: 'Group created successfully.' });
+            res.send({ message: 'Group created successfully.', groupid, members });
           }
         });
       }
@@ -85,7 +89,7 @@ const getGroup = (req, res) => {
       const sql = `SELECT userid FROM usergroups WHERE groupid = '${id}'`;
       mysqlConnection.query(sql, (err, rows) => {
         if (!err) {
-          response.members = rows;
+          response.members = rows.map(row => row.userid);
           res.status(200).send(response);
         }
       });

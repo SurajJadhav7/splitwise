@@ -26,12 +26,13 @@ const createUser = (req, res) => {
     mysqlConnection.query(sql, (err, rows) => {
       if (!err) {
         if (rows.length > 0) {
-          res.status(400).send('User already exists');
+          res.status(400).send({ error: 'User with this username already exists.' , user: rows[0] });
         } else {
-          const sql = `INSERT INTO users VALUES ('${uuidv4()}', '${username}')`;
+          const id = uuidv4();
+          const sql = `INSERT INTO users VALUES ('${id}', '${username}')`;
           mysqlConnection.query(sql, (err) => {
             if (!err) {
-              res.status(200).send(`User ${username} added`);
+              res.status(200).send({ message: 'User created successfully.', user: { id, username } });
             } else {
               console.log(err);
               res.status(422).send(err);
@@ -53,7 +54,7 @@ const getUser = (req, res) => {
     if (rows.length > 0) {
       res.send(rows[0]);
     } else {
-      res.status(404).send({ error: 'User not found. Please enter correct user id.' });
+      res.status(404).send({ error: 'User not found. Please enter correct user id in url in users/:id format.' });
     }
   });
 }

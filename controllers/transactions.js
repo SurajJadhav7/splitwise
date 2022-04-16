@@ -12,7 +12,7 @@ const getTransaction = (req, res) => {
     if (err) {
       res.status(500).send(err);
     } else if (rows.length == 0) {
-      res.status(404).send({ error: 'Transaction not found.' });
+      res.status(404).send({ error: 'Transaction not found for given id.', id });
     } else {
       var response = rows[0];
       const sql = `SELECT * FROM operations WHERE transactionid = '${id}'`;
