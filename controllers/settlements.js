@@ -40,11 +40,89 @@ const getSettlement = (req, res) => {
         }
       }
       var response = { beforeSettlements: beforeSettlements };
+      var afterSettlements = settleTransactions(beforeSettlements);
+      response.afterSettlements = afterSettlements;
       res.status(200).send(response);
     }
   });
 }
 
-module.exports = {
-  getSettlement
+const calculateMinMax = (map) => {
+  let maxObject, minObject;
+  let max = Number.MIN_VALUE;
+  let min = Number.MAX_VALUE;
+  for(let user of map.keys()){
+      if(map.get(user) < min){
+          min = map.get(user)
+          minObject = user
+      }
+      if(map.get(user) > max){
+          max = map.get(user)
+          maxObject = user
+      }
+  }
+  return [minObject, maxObject];
 }
+
+const settleTransactions = (transactions) => {
+  var afterSettlements = new Array()
+  var map = new Map();
+
+  for (let i in transactions) {
+    if (!map.has(transactions[i].userWhoIsGoingToReceive)) {
+      map.set(transactions[i].userWhoIsGoingToReceive, 0)
+    }
+    if (!map.has(transactions[i].userWhoIsGoingToPay)) {
+      map.set(transactions[i].userWhoIsGoingToPay, 0)
+    }
+    map.set(transactions[i].userWhoIsGoingToReceive, map.get(transactions[i].userWhoIsGoingToReceive) + transactions[i].amount)
+    map.set(transactions[i].userWhoIsGoingToPay, map.get(transactions[i].userWhoIsGoingToPay) - transactions[i].amount)
+  }
+
+  let temp = new Map();
+  for(let oneUser of map.keys()){
+      temp.set(oneUser, 1);
+      for(let anotherUser of map.keys()){
+          if(!temp.has(anotherUser) && oneUser != anotherUser){
+              if(map.get(anotherUser) == -map.get(oneUser)){
+                  if(map.get(anotherUser) > map.get(oneUser)){
+                      afterSettlements.push({
+                        "userWhoIsGoingToReceive": anotherUser,
+                        "userWhoIsGoingToPay": oneUser,
+                        "amount": map.get(anotherUser)
+                      });
+                  } else {
+                      afterSettlements.push({
+                        "userWhoIsGoingToReceive": oneUser,
+                        "userWhoIsGoingToPay": anotherUser,
+                        "amount": map.get(oneUser)
+                      });
+                  }
+                  map.set(anotherUser, 0)
+                  map.set(oneUser, 0)
+              }
+          }
+      }
+  }
+
+  const settle = () => {
+    let [minObject, maxObject] = calculateMinMax(map);
+    if(minObject == undefined || maxObject == undefined) return;
+    let minValue = Math.min(-map.get(minObject), map.get(maxObject));
+
+    map.set(minObject, map.get(minObject) + minValue);
+    map.set(maxObject, map.get(maxObject) - minValue);
+
+    afterSettlements.push({
+      "userWhoIsGoingToReceive": maxObject,
+      "userWhoIsGoingToPay": minObject,
+      "amount": minValue
+    });
+    settle();
+  }
+
+  settle();
+  return afterSettlements;
+}
+
+module.exports = { getSettlement };
