@@ -43,14 +43,14 @@ const createGroup = async (req, res) => {
         const sql = `INSERT INTO groupings (id, groupname) VALUES ('${groupid}', '${groupname}')`;
         mysqlConnection.query(sql, (err) => {
           if (err) {
-            res.status(400).send({ error: err });
+            res.status(500).send({ error: err });
           } else {
             for (let i in members) {
               const id = uuidv4();
               const sql = `INSERT INTO usergroups (id, userid, groupid) VALUES ('${id}', '${members[i]}', '${groupid}')`;
               mysqlConnection.query(sql, (err) => {
                 if (err) {
-                  res.status(400).send({ error: err });
+                  res.status(500).send({ error: err });
                 }
               });
             }
@@ -82,19 +82,29 @@ const checkUserExists = (userId) => {
 
 const getGroup = (req, res) => {
   const id = req.params.id;
+  console.log(id);
   const sql = `SELECT * FROM groupings WHERE id = '${id}'`;
   mysqlConnection.query(sql, (err, rows) => {
-    if (rows.length > 0) {
-      let response = rows[0];
-      const sql = `SELECT userid FROM usergroups WHERE groupid = '${id}'`;
-      mysqlConnection.query(sql, (err, rows) => {
-        if (!err) {
-          response.members = rows.map(row => row.userid);
-          res.status(200).send(response);
-        }
-      });
+    if (!err) {
+      console.log("rows", rows);
+      if (rows.length > 0) {
+        let response = rows[0];
+        const sql = `SELECT userid FROM usergroups WHERE groupid = '${id}'`;
+        mysqlConnection.query(sql, (err, rows) => {
+          if (!err) {
+            response.members = rows.map(row => row.userid);
+            res.status(200).send(response);
+          } else {
+            console.log(err);
+            res.status(500).send({ error: 'Internal server error.' });
+          }
+        });
+      } else {
+        res.status(404).send({ error: 'Group not found. Please enter correct group id.' });
+      }
     } else {
-      res.status(404).send({ error: 'Group not found. Please enter correct group id.' });
+      console.log(err);
+      res.status(500).send({ error: 'Internal server error.' });
     }
   });
 }

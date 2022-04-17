@@ -51,10 +51,15 @@ const getUser = (req, res) => {
   const id = req.params.id;
   const sql = `SELECT * FROM users WHERE id = '${id}'`;
   mysqlConnection.query(sql, (err, rows) => {
-    if (rows.length > 0) {
-      res.send(rows[0]);
+    if (!err) {
+      if (rows.length > 0) {
+        res.send(rows[0]);
+      } else {
+        res.status(404).send({ error: 'User not found. Please enter correct user id in url in users/:id format.' });
+      }
     } else {
-      res.status(404).send({ error: 'User not found. Please enter correct user id in url in users/:id format.' });
+      console.log(err);
+      res.status(422).send(err);
     }
   });
 }

@@ -10,7 +10,7 @@ const getTransaction = (req, res) => {
   const sql = `SELECT * FROM transactions WHERE id = '${id}'`;
   db.query(sql, (err, rows) => {
     if (err) {
-      res.status(500).send(err);
+      res.status(500).send({ error: err });
     } else if (rows.length == 0) {
       res.status(404).send({ error: 'Transaction not found for given id.', id });
     } else {
@@ -18,7 +18,7 @@ const getTransaction = (req, res) => {
       const sql = `SELECT * FROM operations WHERE transactionid = '${id}'`;
       db.query(sql, (err, rows) => {
         if (err) {
-          res.status(500).send(err);
+          res.status(500).send({ error: err });
         } else {
           response.operations = rows;
           res.status(200).send(response);
@@ -63,7 +63,7 @@ const createTransaction = async (req, res) => {
       var transactionid = uuidv4();
       await addTransaction({ transactionid, groupid, name });
     } catch(err) {
-      res.status(500).send({ error: 'Error adding transaction to database.', errorr: err });
+      res.status(500).send({ message: 'Error adding transaction to database.', errorr: err });
       return;
     }
     var operationsArray = calculateOperations({ paidby, paidto, totalPaidtoAmount });
