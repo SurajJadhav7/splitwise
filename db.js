@@ -15,6 +15,7 @@ setTimeout(() => {
       console.log('DB connection failed \n Error : ' + err);
     } else {
       console.log('DB connection successful');
+      console.log('Checkout http://localhost:5000/users to get started');
     }
   })
 }, 20000);
